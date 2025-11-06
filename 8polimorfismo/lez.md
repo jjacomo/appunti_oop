@@ -44,7 +44,7 @@ class BiAndMultiCounterImpl extends BiCounterImpl implements BiAndMultiCounter{.
 ```
 
 
-### Object
+#### Object
 
 Visto che tutti gli oggetti ereditano da Object posso fare container polimorfici, ad esempio via array di tipo Object[]:
 ```java
@@ -52,7 +52,7 @@ new Object[]{new SimpleLamp(),new Integer(10)}
 ```
 
 
-### instance of
+#### instance of
 ```java
 for(final Object o : array) {
     System.out.println("Object: " + o.toString());
@@ -69,7 +69,7 @@ for(final Object o : array) {
 
 Le interfacce descrivono solo un contratto.
 Le classi definiscono un comportamento completo.
-Le abstract sono li in mezzo:
+Le abstract sono li `in mezzo`:
 Sono usate per descrivere classi dal comportamento parziale, ossia in cui alcuni metodi sono dicharati ma non implementati.
 Tali classi non sono istanziabili (l’operatore new non pu`o essere usato).
 Possono essere estese e ivi completate, da cui la generazione di oggetti.
@@ -132,17 +132,21 @@ public class UnlimitedLamp extends LimitedLamp{
 }
 ```
 
-Poi puoi implementare anche COuntdownLamp (si esaurisce quando un contatore arriva a 0),
+Poi puoi implementare anche CountdownLamp (si esaurisce quando un contatore arriva a 0),
 ExpirationLamp (dopo un tot di tempo) etc . . . 
 
 
 Sono tipo delle interfacce un po' piu' severe (puoi implementare dei metodi negli abstract)
 
-## Wrapper dei tipi primitivi
+---
+
+### Wrapper dei tipi primitivi
 
 Sono tipo `Integer` per gli int, `Double` per i double, ...
 
-## Variable arguments
+---
+
+### Variable arguments
 
 L'ultimo (o unico) argomento di un metodo puo' essere del tipo 
 `Type... argname`
@@ -152,28 +156,5 @@ void m(int a, float b, Object... args){...}
 ```
 
 dove nel body del metodo argname e' trattato come un `Type[]`
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
