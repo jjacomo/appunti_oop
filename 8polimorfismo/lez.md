@@ -132,8 +132,47 @@ public class UnlimitedLamp extends LimitedLamp{
 }
 ```
 
+Poi puoi implementare anche COuntdownLamp (si esaurisce quando un contatore arriva a 0),
+ExpirationLamp (dopo un tot di tempo) etc . . . 
 
-SONO ARRIVTO ALLA SLIDE 32
+
+Sono tipo delle interfacce un po' piu' severe (puoi implementare dei metodi negli abstract)
+
+## Wrapper dei tipi primitivi
+
+Sono tipo `Integer` per gli int, `Double` per i double, ...
+
+## Variable arguments
+
+L'ultimo (o unico) argomento di un metodo puo' essere del tipo 
+`Type... argname`
+
+```java
+void m(int a, float b, Object... args){...}
+```
+
+dove nel body del metodo argname e' trattato come un `Type[]`
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
