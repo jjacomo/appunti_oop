@@ -168,6 +168,7 @@ public interface UserInterface{
 
 Capisci che hai separato bene i due moduli quando nel modulo della logica non importi javax.swing (cioe' dove fai la logica non c'e' niente di grafica)
 
+---
 
 ## Organizzazione MVC
 
@@ -176,5 +177,11 @@ E' consigliato (non e' sempre usato comunque) separare l'applicazione in 3 modul
 * controller: intermediario tra view e modem
 * modem: parla col controller (logica)
 
+
+--- 
+
+## Event listners
+
+DOMANI
 
 
