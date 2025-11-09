@@ -138,9 +138,175 @@ class RangeIterator implements java.util.Iterator<Integer>{
 
 ## Collection
 
+E' la radice della gerarchia delle collezioni
+
 E' un interfaccia che definisie i metodi come `size()`, `add()`, `remove()`, `contains(Object o)`...
 
+```java
+public interface Collection <E > extends Iterable <E > {
+    // Query Operations
+    int size(); // number of elements
+    boolean isEmpty(); // is the size zero ?
+    boolean contains(Object o); // does it contain an element equal to o ?
+    Iterator<E> iterator(); // yields an iterator
+    Object[] toArray(); // convert to array of objects
+    <T> T[] toArray(T[] a); // puts in ‘a ‘ , or create new if too small
+
+    // Modification Operations
+    boolean add(E e); // adds e
+    boolean remove(Object o); // remove one element that is equal to o
+
+    // Bulk Operations
+    boolean containsAll(Collection<?> c); // contain all elements in c
+
+    boolean addAll(Collection<? extends E> c); // add all elements in c
+    boolean removeAll(Collection<?> c) ; // remove all elements in c
+    boolean retainAll(Collection<?> c) ; // keep only elements in c
+    void clear(); // remove all element
+
+    // ... and other methods introduced in Java 8
+ }
+```
+
+#### Creare collezioni immutabili:
+```java
+public class UseFactories {
+    public static void main ( String [] s ) {
+        // Metodi statici di creazione per Set e List immutabili
+
+        final Set<Integer> set = Set.of(1, 2, 3, 4, 5, 6);
+        System.out.println(set);
+
+        final List<String>list = List.of("a", "b", "c", "a");
+        System.out.println(list);
+
+        final Set<String>set2 = Set.copyOf(list);
+        System.out.println(set2);
+    }
+ }
+```
 
 
+### List
+
+```java
+public interface List<E> extends Collection<E> {
+    // Additional Bulk Operations
+    boolean addAll(int index, Collection<? extends E> c);
+
+    // Positional Access Operations
+    E get(int index); // get at position index
+    E set(int index, E element); // set into position index
+    void add(int index, E element); // add , shifting others
+    E remove(int index); // remove at position index
+
+    // Search Operations
+    int indexOf(Object o); // first equals to o
+    int lastIndexOf(Object o); // last equals to o
+
+    // List Iterators (introdotto in java 8, e' come un iterator ma ha metodi anche per tornare indietro e darti l'index del prev e del next)
+    ListIterator<E> listIterator(); // iterator from 0
+    ListIterator<E> listIterator(int index); // .. from index
+
+    // View
+    List<E> subList(int fromIndex, int toIndex);
+ }
+```
+
+
+## Una modalita' di progettazione da ricordare
+* `Interfacce`: riportano le funzionalita' definitorie del concetto
+* `Classi astratte`: fattorizzano codice comune alle varie implementazioni
+    1. AbstractCollection, AbstractList, e AbstractSet;
+    2. Realizzano “scheletri” di classi per collezioni, corrispondenti alla relative interfacce;
+    3. Facilitano lo sviluppo di nuove classi aderenti alle interfacce;
+* `Classi concrete`: realizzano le varie implementazioni
+
+Valgono anche (soprattutto) per le collezioni.
+
+
+
+## Set
+* Nessun elemento duplicato (nel senso di Object.equals());
+* Il problema fondamentale e' il metodo contains(), nelle soluzioni piu' naive (con iteratore) potrebbe applicare una ricerca sequenziale, e invece si richiedono in genere performance migliori;
+
+
+### HashSet
+Si usa il metodo `Object.hashCode()` come funzione di hash, usata per
+posizionare gli elementi in uno store di elevate dimensioni;
+
+* serve implementare un metodo per l'hashing e un per equals.
+
+#### hashCode e equals
+```java
+public class Person{
+    // altro ..
+
+    public int hashCode() {
+        return Objects.hash(name ,year);
+    }
+
+    public boolean equals(Object obj){
+        if (this == obj){
+            return true;
+        }
+        if (!(obj instanceof Person)){
+            return false;
+        }
+        Person other = (Person) obj;
+        return Objects.equals(name ,other.name) && year == other.year;
+    }
+}
+```
+
+### TreeSet
+Specializzazione di SortedSet e di NavigableSet. Gli elementi sono `ordinati`, e quindi organizzabili in un albero (red-black tree) per avere accesso in tempo logaritmico.
+
+* serve implementare un comparator per decidere l'ordine
+
+#### Comparable
+
+```java
+public interface Comparable<T> {
+    /* returns : 0 (this == o), positive (this > o)
+ negative (this < o) */
+    public int compareTo(T o);
+}
+```
+
+```java
+public class Person implements Comparable < Person >{
+    ...
+    // Esempio di implementazione di compareTo :
+    // - ordine di anno di nascita , e poi per nome ..
+    public int compareTo(Person p){
+        return (this.year != p.year)
+        ? this.year - p.year
+        : this.name.compareTo(p.name);
+    }
+}
+```
+
+#### Comparatore esterno
+
+"Il giudice esterno"
+
+```java
+public interface Comparator<T>{
+    // 0 if o1 == o2 , neg if o1 < o2 , pos is o1 > o2
+    int compare(T o1, T o2);
+}
+```
+
+```java
+public class PersonComparator implements Comparator<Person>{
+    // Confronto prima sul nome, poi sull’anno
+    public int compare(Person o1, Person o2){
+        return o1.getName().equals(o2.getName())
+        ? o1.getYear() - o2.getYear() // Integer . compare ( o1 . getYear () , o2 . getYear () )
+        : o1.getName().compareTo(o2.getName());
+    }
+}
+```
 
 
