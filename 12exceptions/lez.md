@@ -19,8 +19,8 @@
 * sono condizioni anomale dovute alla dinamica del sistema;
     ▶ parametri anomali a funzioni, errori nell’uso delle risorse di sistema,..
 * in genere `e possibile:
-    (i) identificare/descrivere dove potrebbero accadere, 
-    (ii) intercettarli e 
+    (i) identificare/descrivere dove potrebbero accadere,
+    (ii) intercettarli e
     (iii) gestirli prevedendo procedure di compensazione (rimedio al problema che le ha causate);
 * alcuni linguaggi (come Java/C#, non il C) forniscono costrutti di alto livello per agevolarne la gestione
 * nella programmazione moderna li si cerca di associare a bug
