@@ -121,7 +121,7 @@ public abstract class InputStream implements Closeable{
  }
 ```
 
-Con read e close fai il 99% delle operazioni che ti servono.
+Con `read` e `close` fai il 99% delle operazioni che ti servono.
 Il resto e' roba mezza inutile.
 Ad esempio skip(100) ti salta i primi 100 byte dalla lettura.
 
@@ -184,28 +184,162 @@ Come faccio a leggere altro che non siano byte?
 ⇒ definendo una opportuna accoppiata codifica/decodifica e' possibile pensare di scrivere strutture dati via via piu' complesse in uno stream di byte
 ⇒ termini frequenti: “serializzazione/deserializzazione
 
-Decorator
 
-Interfaccia DataInput
+---
 
-Perso
+## Pattern Decorator
 
-
-
-
-
-
-
+Pattern Decorator (i pattern sono tipo iterator) applicato a output/inputStream;
+Questo implementa l'interfaccia Output/InputStream ma a sua volta si compone di altri Output/InputStream.
+Un esempio di pattern decorator e' il `DataInputStream` o (`DataOutputStream`);
+Assieme ai soliti metodi di Output/InputStream ha anche i metodi `WriteInt()` e `WriteUTF()`.
+C'e' anche il `BufferedInputStream`: se faccio 4 read diverse con DataInputStream faccio 4 read separate (piu' dispendiose anche se pensi all'internet): quindi si e' pensato a BufferedInputStream per 
 
 
+```java
+import java.io.*;
+
+public class UseDataStream {
+    public static void main(String[] args) throws IOException{
+        try ( //try with resources
+        final OutputStream file = new FileOutputStream(UseFile.FILE_NAME);
+        final DataOutputStream dstream = new DataOutputStream(file); //Decorazione!
+    ) {
+            dstream.writeBoolean(true);
+            dstream.writeInt(10000);
+            dstream.writeUTF("Ciao");
+            dstream.writeDouble(5.2);
+        }
+        try (
+        final InputStream file2 = new FileInputStream(UseFile.FILE_NAME);
+        final DataInputStream dstream2 = new DataInputStream(file2);
+    ) {
+            System.out.println(dstream2.readBoolean()); // Do not change order
+            System.out.println(dstream2.readInt());
+            System.out.println(dstream2.readUTF());
+            System.out.println(dstream2.readDouble());
+        }
+    }
+ }
+```
 
 
+DataOutputStream ==>   BufferedOutputStream (per performance (di solito non lo usiamo)) => FileOutputStream
+    ^                          ^                                                                 ^
+    |                          |                                                                 |
+chiama i metodi             chiama i metodi di                                      Lavora finalmente sul file
+di BufferedInputStream          FileOutputStream                                        vero e proprio.
 
 
+Si puo' creare una `pipeline` di Decorators diversi aggiungendo nuovi stadi in mezzo tra DataOutputStream e FileOutputStream (tipo CheckedOutputStream (aggiunge checksum), CipherOutputStream, ...)
 
 
+---
+
+## Java Serialization
+
+Salvare Oggetti su file
+Ma si puo' automaticamente salvare ad esempio un Person("Mario") e poi leggerlo da file proprio come tipo Persona (Problema di serializzazione/deserializzazione degli oggetti (e' il termine riferito agli oggetti per decodifica e codifica)).
+Oppure si puo' fare una write di una list di Students?  e poi leggerla e averla gia' pronta?
+Sarebbe bellissimo... e si puo': Serialization.
 
 
+Si fa con `ObjectInputStream` che ha un metodo aggiuntivo `readObject()` (ObjectOutputStream ha il metodo writeObject())
+
+Serializzare un oggetto vuol dire stenderlo finche' tutti i suoi dati non stanno in 'fila' per metterlo in uno stream (SEQUENZA di 0 e 1).
+
+Quando crei una classe Person affinche' sia serializzabile devi dichiararla cosi'
+```java
+public class Person implements Serializable{}
+```
+
+`Serializable` e' un'interfaccia `tag`, non ha dichiara nessun metodo, e' solo un modo per dire che una classe e' serializzabile.
+
+La serialization usa la reflection per ricostruire gli oggetti (non il costruttore).
+
+Se un oggetto e' dichiarato serilizzabile allora affinche' funzioni, anche tutti i suoi oggetti di cui si compone si deve essere serializable.
+Se invece avessi un oggetto che si compone di un altro oggetto non serializable ma la voglio salvare lo stesso (ad esempio l'oggetto player si compone di un immagine che' e' gia' salvata in memoria e quindi non voglio salvarla ancora (anche perche' pesa molto)) posso dichiararlo transient.
+```java
+public class Person{
+    public String name;
+    public transient Object oggettoacasoperlesempio;
+}
+```
 
 
+---
+
+## Caching di toString()
+
+Una volta che hai fatto una volta il toString() di un oggetto non dovresti avere bisogno di ricalcolarlo ogni volta che lo richiami, la concatenazione di Stringhe puo' essere molto onerosa!!
+
+```java
+public class CPerson implements java.io.Serializable {
+    // Eclipse would ask to implement a serialVersionUID
+    // private static final long serialVersionUID = -8985026380526620812 L ;
+    private String name;
+    private int birthYear;
+    private boolean married;
+    transient private String cachedToString = null;
+
+    public CPerson(String name, int birthYear, boolean married) {
+        this.name = name;
+        this.birthYear = birthYear;
+        this.married = married;
+    }
+
+    public String getName() {
+        return this.name;
+    }
+
+    public int getBirthYear() {
+        return this.birthYear;
+    }
+
+    public boolean isMarried() {
+        return this.married;
+    }
+    private String computeToString() {
+        return this.name + ":" + this.birthYear + ":" + (this.married ? "spos" : "non-spos");
+    }
+
+    public String toString() {
+        if (this.cachedToString == null){
+            System.err.println("Log: The cache is empty...");
+            this.cachedToString = this.computeToString();
+        }
+        return this.cachedToString;
+    }
+}
+```
+
+
+## Serializzazione ad-hoc
+
+Volendo puoi ridefinire il protocollo di serializzazione del tuo oggetto.
+Non si usa spesso ma volendo si puo'. Vedi codice delle slide (p52) se ti interessa.
+
+
+### problemino
+
+Se fai una nuova versione della tua applicazione e cambi un oggetto che prima era serilizable e adesso provi a ricaricare un file che era stato salvato in una versione precedente del software. Vedi tutto rotto.
+Fortunatamente esiste il `serialVersionUID`;
+
+
+## Problema piu' grosso:
+
+Pianini odia java Serialization.
+Perche' java Serialization e' un formato chiuso, solo lui sa come decifrarlo col codice java. NO OPEN SOURCE.
+E poi altri linguaggi diversi non possono leggere questi file e quindi in applicazioni grosse che sfruttano diversi linguaggi che non capiscono la java Serialization e' un problema.
+
+Esiste una libreria che usano tutti i linguaggi per serializzare in modo quasi universale: `Protocol Buffer`.
+
+Oppure creo un file di testo. (Pensa al JSON ad esempio, TOML, YAML, XML, CSV)
+Che ha anche il vantaggio di essere modificabile in un editor testuale.
+
+
+## File di Testo
+
+Si usano altre classi, vedi esempi slide 67-70.
+Bega delle codifiche diverse.
 
