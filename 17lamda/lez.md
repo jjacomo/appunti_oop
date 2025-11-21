@@ -274,4 +274,127 @@ public class Person {
  }
 ```
 
-Molto carino optional, sembra utile, ti risparmia molta fatica
+Molto carino optional, sembra utile, ti risparmia molta fatica...
+
+---
+
+# 21/11/2025
+
+Continuiamo: la programmazione funzionale porta codice:
+    + conciso, + espressivo, + sound (sicuro nel senso che mi da' sicurezza)
+
+Oggi `Records` e `Switch expressions`.
+
+
+## Records
+
+kotlin e scala li avevani fin dall'inizio.
+java e' un linguaggio di per se' prolisso: per fare una classettina classica della oop devi fare:
+campi privati, costruttore, metodi getter, metodi setter, toString, hashCode.
+
+Se hai una classe immutabile (hai solo quei campi(?))
+
+Puoi anche solo scrivere:
+
+```java
+public record Point3D(Double x, Double y, Double z){}
+// e ti eviti tutto il "boilerplate code"
+```
+
+E adesso posso usarla proprio come una classe normale.
+
+```java
+Point3D p = new Point3D(1, 2, 3);
+Double x = p.x();
+```
+
+
+Se vuoi puoi aggiungerci un costruttore (o sovrascriverlo).
+Puoi anche aggiungere metodi, l'importante e' che non aggiungi campi (se ci pensi e' ovvio)
+
+
+## Switch expressions
+
+E' un if multivia (come su C) (una bella catena di if else).
+Ma c'e' un twist:
+Switch instruction sta alla Switch expression come la If instruction sta alla If expression (operatore ternario):
+Puoi mettere la switch expression `dentro` una riga di codice.
+
+```java
+public static boolean isAGoodDay ( WorkDay workday ) {
+    boolean result = false;
+    switch(workday){
+        case MONDAY:
+        case TUESDAY:
+        case WEDNESDAY:
+            result = false;
+        break;
+        case THURSDAY:
+        case FRIDAY:
+            result = true;
+    }
+    return result;
+}
+
+// diventa
+public static boolean isAGoodDay(WorkDay workday){
+    return switch(workday) {
+        case MONDAY, TUESDAY, WEDNESDAY -> false;
+        case THURSDAY, FRIDAY -> true;
+    };
+}
+```
+
+Altro esempio
+
+```java
+public static void printWelcomeMessage(WorkDay workday){
+    switch(workday){
+        case MONDAY: System.out.println("Welcome from weekend !"); break;
+        case FRIDAY: System.out.println("Have a nice weekend !"); break;
+        default: System.out.println("Nothing to say"); // il default serve solo quando nonhai esaurito tutti i casi possibili
+    }
+}
+
+// diventa
+public static void printWelcomeMessage(WorkDay workday){
+    System.out.println(switch(workday){ // Applico DRY , con lo switch " interno "
+        case MONDAY -> "Welcome from weekend !";
+        case FRIDAY -> "Have a nice weekend !";
+        default -> "Nothing to say";
+    }) ;
+}
+```
+
+Dalle ultime versioni di java si puo' fare anche uno switch con oggetti diversi 
+
+```java
+public class SwitchPatterns {
+    record Person(String name, String surname, int year){}
+
+    public static String asString(Object obj) {
+        return switch(obj){
+            case null -> "null";
+            case String str -> str;
+            case Integer i when i >=0 -> "Positive: " + i;
+            case Integer i -> "Negative: " + i;
+            case Person(var n, var s, var y) -> "(" + n + ", " + s + ", " + y + ")"; // matcha un oggetto Person fatto cosi' con questi tre oggetti
+            default -> obj.toString();
+        };
+        // racchiude dentro la istanceof che fa in automatico e il casting
+    }
+
+    public static void main(String[] args){
+        System.out.println(asString(null));
+        System.out.println(asString("ciao"));
+        System.out.println(asString(1));
+        System.out.println(asString(-1));
+        System.out.println(asString(new Person("mario", "rossi", 1900)));
+        System.out.println(true);
+    }
+ }
+```
+
+
+
+
