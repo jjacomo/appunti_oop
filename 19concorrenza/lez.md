@@ -24,7 +24,7 @@ ma non lo `stack` (li ci stanno record di attivazione, punto di ritorno delle va
 
 ## Due tipi di thread
 
-User o kernel.
+`User` o `kernel`.
 Quando di base crei un thread in java ne crei uno kernel (ossia che viene gestito tutto dal sistema operativo)
 Con java 21 hanno introdotto i virtual thread (user thread).
 
@@ -33,18 +33,18 @@ I thread sono pesanti (non come i processi ma comunque) e per questo hanno intro
 
 ## Benefici
 
-* reattività (responsiveness)
+* `reattività` (responsiveness)
 • la possibilità di creare thread dedicati all'interazione con l'utente,
 concorrentemente all'esecuzione di operazioni a lungo termine, è
 fondamentale per creare interfacce utente (UI) adeguate
-* condivisione di risorse (resource sharing)
+* `condivisione` di risorse (resource sharing)
 • thread di uno stesso processo condividono dati e codice, che non
 devono quindi essere replicati
-* performance (economy)
+* `performance` (economy)
 • la creazione e lo switch di contesto a livello di thread richiede molte
 meno risorse temporali e spaziali che non la creazione e switch fra
 processi.
-* sfruttamento di architetture multiprocessore/multicore
+* `sfruttamento di architetture multiprocessore/multicore`
 • i benefici dell'uso di thread multipli si sentono ancor più su
 architetture multiprocessore, dove thread distinti possono essere
 messi in esecuzione concorrente su CPU diverse, aumentando
@@ -52,12 +52,12 @@ notevolmente la concorrenza. E poi e' scalabile, se ho cpu con
 numeri diversi di core li uso tutti lo stesso.
 
 ## terminologia
-* Programmazione asincrona (asynchronous programming)
+* Programmazione `asincrona` (asynchronous programming)
 – esecuzione di computazioni in modo asincrono, non bloccante
-* Programmazione distribuita (distributed programming)
+* Programmazione `distribuita` (distributed programming)
 – quando i processori sono distribuiti in rete e non c'è condivisione
 fisica della memoria
-* Programmazione multithread (non e' l'unico approcio per fare multithread)
+* Programmazione `multithread` (non e' l'unico approcio per fare multithread)
 – quando le parti in esecuzione concorrente sono rappresentate da
 thread
 
@@ -232,6 +232,147 @@ Quindi quando finisce di elaborare il primo click parte subito il secondo e cosi
 Quindi e' tutto un po' in ritardo e laggoso.
 
 Se per caso i metodi di ascolto devono eseguire codice gravoso e non vuoi bloccare tutto puoi delegare i compiti al controller che poi fa partire dei thread.
+
+
+
+# lezione 2
+
+Oggi parliamo di interazione e coordinazione tra thread.
+E poi un po' di bonus.
+
+
+## interazione e coordinazione
+
+Tipo quando dopo aver ordinato gli array spezzati i thread fanno la wait per sincronizzarsi prima di fare il merge.
+
+`Competizione`: Riguarda l'accesso a risorse condivise (tipo memoria).
+    In sistemi operativi abbiamo visto i semafori (li ha inventati djikstra).
+    Dei thread devono contare tutti i file di un file system, mi serve un contatore condiviso.
+    Se in due andassero a scrivere sullo stesso contatore (memoria) contemporaneamente fanno un casino 
+    => `mutua esclusione` (in generale e' una sezione critica)
+        In java esistono i metodi `synchronized` (garantiscono mutua esclusione)
+    => `sincronizzazione`
+        In java la classe object ha anche metodi wait, notify, notifyAll
+
+### Synchronized
+
+Un metodo di un thread che e' detto synchronized fa si che quando ci sono piu' thread che vogliono usare quel metodo lo puo' fare solo uno alla volta.
+Il thread che sta usando il metodo e' locked, poi quando finisce viene unlockato e possono eseguirlo gli altri thread.
+
+```java
+public class ResourceUser extends Thread {
+    private Resource res;
+    public ResourceUser(String name, Resource res) {
+        super(name);
+        this.res = res;
+    }
+    public void run() {
+        log("before invoking op");
+        res.op();
+        log("after invoking op");
+    }
+    private void log(String msg) {
+        System.out.println("[" + Thread.currentThread() + "] " + msg);
+    }
+}
+```
+
+```java
+public class Resource {
+    public synchronized void op() {
+        System.out.println("[Resource] Thread " + Thread.currentThread() + " entered.");
+        try {
+            Thread.sleep(5000);
+        } catch (Exception ex) {}
+        System.out.println("[Resource] - Thread " + Thread.currentThread() + " exited.");
+    }
+}
+```
+
+```java
+public class TestResourceUsers {
+    public static void main(String[] args) {
+        Resource res = new Resource();
+        ResourceUser userA = new ResourceUser("pippo", res);
+        ResourceUser userB = new ResourceUser("pluto", res);
+        userA.start();
+        try {
+            Thread.sleep(500);
+        } catch (Exception ex) {
+        }
+        userB.start();
+    }
+}
+
+// [Thread[pippo,5,main]] before invoking op
+// [Resource] Thread Thread[pippo,5,main] entered.
+// [[pluto,5,main]] before invoking op
+// [Resource] -  Thread[pippo,5,main] exited.
+// [Thread[pippo,5,main]] after invoking op
+// [Resource] Thread [pluto,5,main] entered.
+// [] - Thread Thread[pluto,5,main] exited.
+// [Thread[pluto,5,main]] after invoking op
+```
+
+
+
+## Classi thread safe
+
+Di base se scrivi una classe senza pensare ai thread non sono thread safe.
+Quindi se le usi con i thread si spacca tutto.
+
+
+### esempio counter (corsa critica)
+
+Quella classe COunter user non e' thread safe.
+Counter++ non e' una istruzione atomica e (prima deve leggere, incrementarlo e poi scrivere).
+Quindi un thread potrebbe interrompersi nel bel mezzo dell'incremento e passarr l'esecuzione a un secondo thread.
+Ad esempio potrebbe accadere che entrambi leggono 5 e lo mettono nel loro registro, entrambi incrementano e quindi entrambi scrivono 6 (quando invece dovrebbe essere 7).
+La soluzione ovviamente e' `mettere synchronized in tutti i metodi di Counter`.
+
+Il downSide e' che se metti synchronized dappertutto e' un po' piu' lento della versione unsafe in cui non ci sono (ma almeno e' giusto). Anche molto piu' lento.
+
+Avere thread sicnronizzati e' importante quando devono modificare, se invece dovessere solo leggere non ci sarebbe bisogno.
+Dovrei arrivare a un giusto mezzo per non sacrificare troppa performance.
+
+```java
+class MyWorkerA extends Thread {
+    private Object lock;
+    public MyWorkerA(Object lock){
+        this.lock = lock;
+    }
+    public void run(){
+        while (true){
+            System.out.println("a1");
+            synchronized(lock){ // sezione critica
+                System.out.println("a2"); // stampa sempre a2 e a3 consecutivamente (ODDIO FORSE NO?????)
+                System.out.println("a3"); // INDAGA
+            }
+        }
+    }
+}
+```
+
+## Pattern Monitor
+
+Quando un thread chiama `wait` si sosopende finche' in attesa che qualcuno chiami `notify` o `notifyAll`.
+Se chiamo notify su un oggetto ha questo effetto: se c'e' un thread in attesa su quell'oggetto.
+
+### Synchronizer
+
+mi son perso honestly
+pero' c'e un esempietto che sembra fatto bene
+
+## C'e' la libreria java.util.concurrent
+
+Qui trovi delle collection per la concorrenza e dei synchronizers gia' fatti (semafori, lock, barriere, latch, ...).
+
+
+...
+
+
+Esempio chronometro...
+Non ce la faccio piu
 
 
 
