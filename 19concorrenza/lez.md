@@ -371,8 +371,25 @@ Qui trovi delle collection per la concorrenza e dei synchronizers gia' fatti (se
 ...
 
 
+---
+
+## GUI reattive
 Esempio chronometro...
 Non ce la faccio piu
+praticamente invece di bloccare l'eventDispatcherThread con un metodo gravoso faccio che il metodo gravoso viene eseguito con un altro thread.
+
+### ARCH MVC + THREAD
 
 
 
+
+
+# Altro
+
+Virtual Threads, etc...
+        `^`
+        `|`
+Sono molto piu' leggeri
+e molto veloci
+
+c'e' un esempio anche sui thread virtuali
