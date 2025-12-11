@@ -309,6 +309,8 @@ public class UseBankAccount {
 
 E' un potenziamento del template
 
+---
+
 ### Observer 
 Abbiamo un oggetto, siamo interessati di essere notificati quando in un oggetto succede qualcosa.
 E' come aggiungere un EventListener in Swing (si usano proprio gli observer)
@@ -362,8 +364,8 @@ public static Person create(String name, String surname, String city, int year){
     return new Person(name, surname, city, year);
 }
 
-public static Person createWithoutCity(String name, String surname, int year){
-    return new Person(name, surname, null, year);
+public static Person createWithoutCity(String name, String surname, int year){ // meglio usare nomi
+    return new Person(name, surname, null, year);                              // che parlano
 }
 
 public static Person createWithoutName(String surname, String city, int year){
@@ -377,8 +379,137 @@ Ora nel main posso fare:
 
 Ma adesso ancora violo il DIP perche' il mio main dipende dalla implementazione della classe Person.
 
-#### Simple Factory
+Vogliamo togliere l'utilizzo della new (e' troppo vincolata al costruttore della classe, se arriva il giorno che cambio la classe e il costruttore, tutti gli oggetti che facevano la new di quell'oggetto sono da cambiare ed e' un casino)
 
 E' il passo successivo: Creo un interfaccia in cui ci metto anche i metodi per creare
+```java
+interface Person {
+    getName();
+    getCity();
+    ....
+    // metodi statici che servono per creare persone
+    create();
+    createWithoutCity();
+    ....
+}
+```
+
+#### Simple Factory
+
+Ora invece di mettere i metodi per la creazione li metto in una classe separata PersonFactory.
+Cosi' adesso l'interfaccia e' anche quella classica che e' piu' pulita.
+
+Adesso nel main per creare una persona devo fare:
+
+```java
+public static void main(String[] args){
+    private PersonFactory pf = new PersonFactory();
+
+    private Person p1 = pf.createWithoutCity();
+    private Person p2 = pf.createWithoutName();
+}
+```
+
 ==> e' ancora intermedio
+
+
+#### Factory Method
+
+La classe PersonFactory diventa una interfaccia e creo una implementazione PersonFactoryImpl.
+Quindi abbiamo due interfacce: l'interfaccia d'uso (quella classica) e l'interfaccia di creazione.
+
+Cosi' prevediamo che quando costruiamo un oggetto possiamo decidere a seconda di come lo creo la sua implementazione.
+In questo modo posso ottimizzare delle classi.
+
+
+==> ci siamo quasi
+
+#### Abstract Factory
+
+Simile al Factory Method ma 
+es hai un applicazione grafica in cui fai decine di JTextFIeld creati con la new.
+Un bel giorno vuoi modificarli tutti cambiando il font, li dovresti passare tutti a rassegna...
+
+Con questo pattern avrei una interfaccia GUIFactory con metodi astratti createButton, createPanel ....
+Il bello e' che adesso se voglio un font diverso basta creare un altra implementazione di GUIFactory e usarla.
+Ora posso cambiare la skin della GUI (il look & feel).
+Tra l'altro se e' ben organizzato potresti passare anche da un implementazione con swing e javaFX
+
+DEFINITIVA
+
+---
+
+### Builder
+
+Cattura il concetto di catena di montaggio.
+L'oggetto viene costruito un po' alla volta.
+Si parla di oggetti con una struttura articolata.
+
+C'e' un'interfaccia builder e un concrete builder. Hanno metodi createPart1(), createPart2(), ...
+
+E' comodissimo quando devi creare oggetti con costruttori di molti parametri e che sono opzionali.
+
+La classe builder (di Person) ha tutti i campi di person
+
+```java
+public static class Builder {
+    private String name;
+    private String surname;
+    private Optional<String> city = Optional.empty();
+    private Optional<Integer> year = Optional.empty();
+
+    public Builder(String name, String surname){
+        this.name = name;
+        this.surname = surname;
+    }
+
+    public Builder city(String s){
+        this.city = Optional.ofNullable(s);
+        return this;
+    }
+
+    public Builder year(int i) {
+        this.year = Optional.of(i).filter(k -> k >= 1900 || k <= 2015);
+        return this;
+    }
+
+    public Person build() throws IllegalStateException{
+        if (this.name == null || this.surname == null || !this.year.isPresent()){
+            throw new IllegalStateException(" ");
+        }
+        return new Person(this.name, this.surname, this.city, this.year.get());
+    }
+}
+```
+
+```java
+public class UsePersonBuilder{
+    public static void main(String[] args){
+        final Person p = new Person.Builder("Mirko", "Viroli") // in questo modo si capisce subito anche
+                                    .city("Cesena")            // che cosa e' ogni parametro
+                                    .year(1973)
+                                    .build();
+
+        // Creazione errata, intercettata dalla logica del Builder
+        final Person p2 = new Person.Builder("Gino", "Bianchi")
+        // . year (2016)
+        .build();
+    }
+ }
+```
+
+C'e' anche un pattern leggermente piu' avanzato che ti obbliga a ogni step a chiamare solo una volta il .city ad esempio e poi da city ti vincola a fare il .year e cosi' via.
+E' tutto guidato, si chiama Step Builder.
+
+---
+
+Qui finiscono i pattern che facciamo in classe.
+Consigliato di usarli.
+
+I piu' importanti sono Factory, Strategy e Template method.
+Infatti possono anche uscire all'esame.
+
+Ah e poi ci sono altre slide 21 per roba un po' piu' avanzata se sei interessato.
+
+
 
